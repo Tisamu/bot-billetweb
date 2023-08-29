@@ -1,12 +1,34 @@
 import puppeteer, {Browser, ElementHandle, Frame, Page} from 'puppeteer';
 import ParamsLoader from "./paramsLoader";
+import {Ticket} from "./types";
 
-const paramsLoader = new ParamsLoader(`${__dirname}/../scrapper-data.json`);
+const paramsLoader = new ParamsLoader(`${__dirname}/../datas/test-shop.json`);
 const PARAMS = paramsLoader.loadParams();
 
 let CART_READY = false;
 
-const huntTicket = async (page: Page, ticketText: string) => {
+const getMaxAuthorizedOfTickets = async (ticketElement: ElementHandle<Element>): Promise<number> => {
+    const optionsNumber = await ticketElement?.$$eval(
+        ".shop_step1_quantity_select",
+        el => (el[0] as HTMLSelectElement).options.length
+    );
+
+    return optionsNumber - 1; // -1 because there is an option for "0"
+}
+
+const getCurrentTicketsCount = async (ticketElement: ElementHandle<Element>): Promise<number> => {
+    return parseInt(await ticketElement?.$$eval(
+        ".shop_step1_quantity_select",
+        el => (el[0] as HTMLSelectElement).value
+    ));
+}
+
+const addTicketToCart = async (ticketElement: ElementHandle<Element>): Promise<void> => {
+    const addBtn = await ticketElement?.waitForSelector(".shop_step1_quantity_icon_add");
+    await addBtn?.click();
+}
+
+const huntTicket = async (page: Page, ticket: Ticket) => {
     if (CART_READY) {
         return;
     }
@@ -14,16 +36,25 @@ const huntTicket = async (page: Page, ticketText: string) => {
     const nextBtn = await page.waitForSelector(".nextButton input");
 
     try {
-        const ticketElement = await page.waitForSelector(`.click_to_add.shop_step1_ticket[data-name=\"${ticketText}\"]`,
+        const ticketElement = await page.waitForSelector(`.click_to_add.shop_step1_ticket[data-name=\"${ticket.text}\"]`,
             {timeout: 100});
-        await ticketElement?.click();
+
+        if (!ticketElement) throw new Error("Ticket not found");
+
+        const actualMax = Math.min(await getMaxAuthorizedOfTickets(ticketElement), ticket.count);
+        console.log("The max is ", actualMax);
+
+        while (await getCurrentTicketsCount(ticketElement) < actualMax) {
+            await addTicketToCart(ticketElement);
+        }
+
         await nextBtn?.click();
         console.log("FOUND !");
         await page.bringToFront();
         CART_READY = true;
     } catch (e) {
         await page.reload();
-        await huntTicket(page, ticketText);
+        await huntTicket(page, ticket);
     }
 }
 
@@ -32,7 +63,7 @@ const instantiateHunt = async (browser: Browser) => {
     const page = await browser.newPage();
     await page.goto(PARAMS.url);
     //TODO: Hunt every tickets of the list
-    await huntTicket(page, PARAMS.tickets[0].text);
+    await huntTicket(page, PARAMS.tickets[0]);
 }
 
 const main = async (headless: boolean) => {
