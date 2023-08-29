@@ -34,6 +34,7 @@ const huntTicket = async (page: Page, ticket: Ticket) => {
     }
 
     const nextBtn = await page.waitForSelector(".nextButton input");
+    if (!nextBtn) throw new Error("Cannot found the next Button, it means tickets list is not rendered correctly :(")
 
     try {
         const ticketElement = await page.waitForSelector(`.click_to_add.shop_step1_ticket[data-name=\"${ticket.text}\"]`,
