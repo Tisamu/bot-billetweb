@@ -1,0 +1,12 @@
+{
+  "url": "https://www.billetweb.fr/shop.php?event=devfest-nantes",
+  "tabs": 2,
+  "refreshMs": 500,
+  "tickets": [
+    {
+      "name": "Ticket bénévole",
+      "text": "Je postule en tant que Bénévole au Devfest",
+      "count": 1
+    }
+  ]
+}
