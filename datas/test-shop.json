@@ -1,7 +1,6 @@
 {
   "url": "https://www.billetweb.fr/shop.php?event=test-event34",
-  "tabs": 2,
-  "refreshMs": 500,
+  "tabs": 10,
   "tickets": [
     {
       "name": "Ticket de test - 2 jours",

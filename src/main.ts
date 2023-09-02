@@ -1,6 +1,6 @@
-import puppeteer, {Browser, ElementHandle, Frame, Page} from 'puppeteer';
+import puppeteer, { Browser, ElementHandle, Frame, Page } from 'puppeteer';
 import ParamsLoader from "./paramsLoader";
-import {Ticket} from "./types";
+import { Ticket } from "./types";
 
 const paramsLoader = new ParamsLoader(`${__dirname}/../datas/test-shop.json`);
 const PARAMS = paramsLoader.loadParams();
@@ -33,17 +33,18 @@ const huntTicket = async (page: Page, ticket: Ticket) => {
         return;
     }
 
+    await page.bringToFront(); // Activate tab
+
     const nextBtn = await page.waitForSelector(".nextButton input");
     if (!nextBtn) throw new Error("Cannot found the next Button, it means tickets list is not rendered correctly :(")
 
     try {
         const ticketElement = await page.waitForSelector(`.click_to_add.shop_step1_ticket[data-name=\"${ticket.text}\"]`,
-            {timeout: 100});
+            { timeout: 100 });
 
         if (!ticketElement) throw new Error("Ticket not found");
 
         const actualMax = Math.min(await getMaxAuthorizedOfTickets(ticketElement), ticket.count);
-        console.log("The max is ", actualMax);
 
         while (await getCurrentTicketsCount(ticketElement) < actualMax) {
             await addTicketToCart(ticketElement);
@@ -51,7 +52,6 @@ const huntTicket = async (page: Page, ticket: Ticket) => {
 
         await nextBtn?.click();
         console.log("FOUND !");
-        await page.bringToFront();
         CART_READY = true;
     } catch (e) {
         await page.reload();
@@ -59,19 +59,26 @@ const huntTicket = async (page: Page, ticket: Ticket) => {
     }
 }
 
-const instantiateHunt = async (browser: Browser) => {
+const instantiateHunt = async (browser: Browser, tabId: number) => {
 
     const page = await browser.newPage();
     await page.goto(PARAMS.url);
     //TODO: Hunt every tickets of the list
     await huntTicket(page, PARAMS.tickets[0]);
+    return tabId;
+
 }
 
 const main = async (headless: boolean) => {
-    const browser = await puppeteer.launch({headless});
+    const browser = await puppeteer.launch({ headless });
 
     for (let i = 0; i < PARAMS.tabs; i++) {
-        instantiateHunt(browser).catch(e => {
+        instantiateHunt(browser, i + 1).then(async found => {
+            // Ensure we focus the found tab
+            console.log("Found on ", found);
+            let tabs = await browser.pages();
+            tabs[found].bringToFront();
+        }).catch(e => {
             throw new Error(e)
         });
     }

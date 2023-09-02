@@ -1,7 +1,6 @@
 {
   "url": "https://www.billetweb.fr/shop.php?event=devfest-nantes",
   "tabs": 2,
-  "refreshMs": 500,
   "tickets": [
     {
       "name": "Ticket bénévole",
