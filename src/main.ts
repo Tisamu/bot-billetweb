@@ -2,7 +2,8 @@ import puppeteer, { Browser, ElementHandle, Frame, Page } from 'puppeteer';
 import ParamsLoader from "./paramsLoader";
 import { Ticket } from "./types";
 
-const paramsLoader = new ParamsLoader(`${__dirname}/../datas/test-shop.json`);
+
+const paramsLoader = new ParamsLoader(`${__dirname}/../datas/${process.argv[2]}.json`);
 const PARAMS = paramsLoader.loadParams();
 
 let CART_READY = false;
@@ -38,7 +39,6 @@ const huntTickets = async (page: Page, tickets: Array<Ticket>) => {
         return;
     }
 
-
     await page.bringToFront(); // Activate tab
 
     const nextBtn = await page.waitForSelector(".nextButton input");
@@ -47,19 +47,16 @@ const huntTickets = async (page: Page, tickets: Array<Ticket>) => {
     try {
 
         const ticketsElements: ElementHandle<Element>[] = await page.$$(".click_to_add.shop_step1_ticket")
+        let foundAtLeastOneTicket = false;
 
         // Adjust quantities
-
         for (let ticket of tickets) {
-            console.log("Browsing tickets", tickets.length);
-            console.log("Ticket is ", ticket);
-            console.log("For elements count : ", ticketsElements.length);
-            console.log(ticketsElements[0]);
             for (let ticketElement of ticketsElements) {
                 const ticketDataName = await ticketElement.evaluate(el => el.getAttribute("data-name"));
                 console.log("Ticket element is ", ticketDataName);
-                console.log("Comparing : ", ticketElement.getProperty("data-name"), "and", ticket.text);
+                console.log("Comparing : ", ticketDataName, "and", ticket.text);
                 if (tickets.find(t => t.text === ticketDataName)) {
+                    foundAtLeastOneTicket = true;
                     const actualMax = Math.min(await getMaxAuthorizedOfTickets(ticketElement), ticket.count);
                     console.log("Max is ", actualMax);
                     while (await getCurrentTicketsCount(ticketElement) < actualMax) {
@@ -73,21 +70,8 @@ const huntTickets = async (page: Page, tickets: Array<Ticket>) => {
             }
         }
 
-
-
-        // const ticketElement = await page.waitForSelector(`.click_to_add.shop_step1_ticket[data-name=\"${ticket.text}\"]`,
-        //     { timeout: 100 });
-
-        // if (!ticketElement) throw new Error("Ticket not found");
-
-        // const actualMax = Math.min(await getMaxAuthorizedOfTickets(ticketElement), ticket.count);
-
-        // while (await getCurrentTicketsCount(ticketElement) < actualMax) {
-        //     await addTicketToCart(ticketElement);
-        // }
-
+        if (!foundAtLeastOneTicket) throw new Error("No tickets found");
         await nextBtn?.click();
-        console.log("FOUND !");
         CART_READY = true;
     } catch (e) {
         console.error(e);
@@ -111,7 +95,6 @@ const main = async (headless: boolean) => {
     for (let i = 0; i < PARAMS.tabs; i++) {
         instantiateHunt(browser, i + 1).then(async found => {
             // Ensure we focus the found tab
-            console.log("Found on ", found);
             let tabs = await browser.pages();
             tabs[found].bringToFront();
         }).catch(e => {

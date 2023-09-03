@@ -1,10 +1,15 @@
 {
   "url": "https://www.billetweb.fr/shop.php?event=devfest-nantes",
-  "tabs": 2,
+  "tabs": 10,
   "tickets": [
     {
-      "name": "Ticket bénévole",
-      "text": "Je postule en tant que Bénévole au Devfest",
+      "name": "Billet Jeudi",
+      "text": "Coupon 1 jour : jeudi",
+      "count": 1
+    },
+    {
+      "name": "Billet Vendredi",
+      "text": "Coupon 1 jour : vendredi",
       "count": 1
     }
   ]
