@@ -28,10 +28,16 @@ const addTicketToCart = async (ticketElement: ElementHandle<Element>): Promise<v
     await addBtn?.click();
 }
 
-const huntTicket = async (page: Page, ticket: Ticket) => {
+const removeTicketFromCart = async (ticketElement: ElementHandle<Element>): Promise<void> => {
+    const addBtn = await ticketElement?.waitForSelector(".shop_step1_quantity_icon_remove");
+    await addBtn?.click();
+}
+
+const huntTickets = async (page: Page, tickets: Array<Ticket>) => {
     if (CART_READY) {
         return;
     }
+
 
     await page.bringToFront(); // Activate tab
 
@@ -39,23 +45,54 @@ const huntTicket = async (page: Page, ticket: Ticket) => {
     if (!nextBtn) throw new Error("Cannot found the next Button, it means tickets list is not rendered correctly :(")
 
     try {
-        const ticketElement = await page.waitForSelector(`.click_to_add.shop_step1_ticket[data-name=\"${ticket.text}\"]`,
-            { timeout: 100 });
 
-        if (!ticketElement) throw new Error("Ticket not found");
+        const ticketsElements: ElementHandle<Element>[] = await page.$$(".click_to_add.shop_step1_ticket")
 
-        const actualMax = Math.min(await getMaxAuthorizedOfTickets(ticketElement), ticket.count);
+        // Adjust quantities
 
-        while (await getCurrentTicketsCount(ticketElement) < actualMax) {
-            await addTicketToCart(ticketElement);
+        for (let ticket of tickets) {
+            console.log("Browsing tickets", tickets.length);
+            console.log("Ticket is ", ticket);
+            console.log("For elements count : ", ticketsElements.length);
+            console.log(ticketsElements[0]);
+            for (let ticketElement of ticketsElements) {
+                const ticketDataName = await ticketElement.evaluate(el => el.getAttribute("data-name"));
+                console.log("Ticket element is ", ticketDataName);
+                console.log("Comparing : ", ticketElement.getProperty("data-name"), "and", ticket.text);
+                if (tickets.find(t => t.text === ticketDataName)) {
+                    const actualMax = Math.min(await getMaxAuthorizedOfTickets(ticketElement), ticket.count);
+                    console.log("Max is ", actualMax);
+                    while (await getCurrentTicketsCount(ticketElement) < actualMax) {
+                        await addTicketToCart(ticketElement);
+                    }
+                } else {
+                    while (await getCurrentTicketsCount(ticketElement) > 0) {
+                        await removeTicketFromCart(ticketElement);
+                    }
+                }
+            }
         }
+
+
+
+        // const ticketElement = await page.waitForSelector(`.click_to_add.shop_step1_ticket[data-name=\"${ticket.text}\"]`,
+        //     { timeout: 100 });
+
+        // if (!ticketElement) throw new Error("Ticket not found");
+
+        // const actualMax = Math.min(await getMaxAuthorizedOfTickets(ticketElement), ticket.count);
+
+        // while (await getCurrentTicketsCount(ticketElement) < actualMax) {
+        //     await addTicketToCart(ticketElement);
+        // }
 
         await nextBtn?.click();
         console.log("FOUND !");
         CART_READY = true;
     } catch (e) {
+        console.error(e);
         await page.reload();
-        await huntTicket(page, ticket);
+        await huntTickets(page, PARAMS.tickets);
     }
 }
 
@@ -63,8 +100,7 @@ const instantiateHunt = async (browser: Browser, tabId: number) => {
 
     const page = await browser.newPage();
     await page.goto(PARAMS.url);
-    //TODO: Hunt every tickets of the list
-    await huntTicket(page, PARAMS.tickets[0]);
+    await huntTickets(page, PARAMS.tickets);
     return tabId;
 
 }
