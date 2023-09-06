@@ -34,6 +34,13 @@ const removeTicketFromCart = async (ticketElement: ElementHandle<Element>): Prom
     await addBtn?.click();
 }
 
+const retriggerPages = async (page: Page) => {
+    const pages = await page.browser().pages()
+    for (let page of pages) {
+        await page.bringToFront();
+    }
+}
+
 const huntTickets = async (page: Page, tickets: Array<Ticket>) => {
     if (CART_READY) {
         return;
@@ -58,7 +65,6 @@ const huntTickets = async (page: Page, tickets: Array<Ticket>) => {
                 if (tickets.find(t => t.text === ticketDataName)) {
                     foundAtLeastOneTicket = true;
                     const actualMax = Math.min(await getMaxAuthorizedOfTickets(ticketElement), ticket.count);
-                    console.log("Max is ", actualMax);
                     while (await getCurrentTicketsCount(ticketElement) < actualMax) {
                         await addTicketToCart(ticketElement);
                     }
@@ -74,8 +80,8 @@ const huntTickets = async (page: Page, tickets: Array<Ticket>) => {
         await nextBtn?.click();
         CART_READY = true;
     } catch (e) {
-        console.error(e);
         await page.reload();
+        retriggerPages(page);
         await huntTickets(page, PARAMS.tickets);
     }
 }
