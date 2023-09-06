@@ -3,7 +3,7 @@ import ParamsLoader from "./paramsLoader";
 import { Ticket } from "./types";
 
 
-const paramsLoader = new ParamsLoader(`${__dirname}/../datas/${process.argv[2]}.json`);
+const paramsLoader = new ParamsLoader(`${__dirname}/../datas/${process.argv[2] || "default"}.json`);
 const PARAMS = paramsLoader.loadParams();
 
 let CART_READY = false;

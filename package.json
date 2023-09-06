@@ -1,7 +1,7 @@
 {
   "name": "ts-df-bot",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "dist/main.js",
   "license": "MIT",
   "scripts": {
     "start": "ts-node src/main.ts"

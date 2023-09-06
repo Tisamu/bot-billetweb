@@ -1,0 +1,21 @@
+{
+  "url": "https://www.billetweb.fr/shop.php?event=devfest-nantes",
+  "tabs": 10,
+  "tickets": [
+    {
+      "name": "Pass 2 jours",
+      "text": "Pack 2 coupons : jeudi + vendredi",
+      "count": 1
+    },
+    {
+      "name": "Billet Jeudi",
+      "text": "Coupon 1 jour : jeudi",
+      "count": 1
+    },
+    {
+      "name": "Billet Vendredi",
+      "text": "Coupon 1 jour : vendredi",
+      "count": 1
+    }
+  ]
+}
